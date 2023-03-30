@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
@@ -6,25 +6,28 @@ import './App.css'
 function App() {
   const [count, setCount] = useState(0)
   const [budget, setBudget] = useState(0);
-  const [availableMoney, setAvailableMoney] = useState(budget);
+  const [availableMoney, setAvailableMoney] = useState(0);
+  const [bills, setBills] = useState([10, 20, 30]);
 
-  const calculateAvailableMoney = (budget: number) => {
 
-    setAvailableMoney(budget);
-  }
+  // every budget update, bills gets subtracted from budget
+  // whole bills array gets recalculated - no memoization
 
-  const handleOnBudgetChange = (e: any) => {
-    console.log(e.target.value);
-    setBudget(e.target.value);
-    calculateAvailableMoney(budget);
-  }
+  useEffect(() => {
+    let newBudget = budget;
+    bills.map((oneBill) => {
+      newBudget -= oneBill;
+    })
+    console.log("Updated budget: " + newBudget);
+    setAvailableMoney(newBudget);
+  }, [budget])
 
   return (
     <div className="App">
       <h1>Budget: $<input
         type="number"
         placeholder="500"
-        onChange={(e) => { handleOnBudgetChange(e) }}
+        onChange={(e: any) => { setBudget(e.target.value * 1); }}
         style={{
           border: "none",
           background: "none",
