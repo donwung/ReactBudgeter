@@ -1,21 +1,33 @@
-import { useState, useEffect } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState, useEffect } from 'react';
+import reactLogo from './assets/react.svg';
+import viteLogo from '/vite.svg';
+import axios from 'axios';
+import './App.css';
 
 function App() {
   const [count, setCount] = useState(0)
   const [budget, setBudget] = useState(0);
   const [availableMoney, setAvailableMoney] = useState(0);
-  const [bills, setBills] = useState([{ name: "netflix", amount: 10 }, { name: "hulu", amount: 20 }, { name: "amazon prime", amount: 30 }]); // array of objects
+  const [bills, setBills] = useState([]);
 
 
   // every budget update, bills gets subtracted from budget
   // whole bills array gets recalculated - no memoization
 
+
+
   useEffect(() => {
+    axios.get("http://localhost:8000/api/budgeter/")
+      .then(res => {
+        console.log(res.data);
+        setBills(res.data);
+      })
+      .catch(err => {
+        console.log(err)
+      })
+
     let newBudget = budget;
-    bills.map((oneBill) => {
+    bills.map((oneBill: any) => {
       newBudget -= oneBill.amount;
     })
     console.log("Updated budget: " + newBudget);
@@ -44,7 +56,7 @@ function App() {
       <h1>AvailableMoney: {availableMoney}</h1>
       <h1>Bills:</h1>
       <input placeholder='new bill'></input>
-      {bills.map((bill) => {
+      {bills.map((bill: any) => {
         return (
           <div>
             {bill.name} : $<input type="number" value={bill.amount} onChange={() => { handleOnBillUpdate() }}></input>
