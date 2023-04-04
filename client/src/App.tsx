@@ -9,14 +9,15 @@ function App() {
   const [budget, setBudget] = useState(0);
   const [availableMoney, setAvailableMoney] = useState(0);
   const [bills, setBills] = useState([]);
-
+  const [newBillName, setNewBillName] = useState("");
+  const [newBillAmount, setNewBillAmount] = useState(0);
+  const [updated, setUpdated] = useState(false);
 
   // every budget update, bills gets subtracted from budget
   // whole bills array gets recalculated - no memoization
 
 
-
-  useEffect(() => {
+  const updateBudget = () => {
     axios.get("http://localhost:8000/api/budgeter/")
       .then(res => {
         console.log(res.data);
@@ -32,11 +33,44 @@ function App() {
     })
     console.log("Updated budget: " + newBudget);
     setAvailableMoney(newBudget);
+  }
+
+  useEffect(() => {
+    updateBudget();
   }, [budget])
 
-  const handleOnBillUpdate = () => {
+  const handleOnBillUpdate = (e: any, bill: any) => {
+    axios.put(`http://localhost:8000/api/budgeter/${bill._id}`,
+      {
+        name: bill.name,
+        amount: e.target.value
+      })
+      .then(() => {
+        updateBudget();
+      })
     // input will receive an id and update that id in API
     console.log("updating one bill");
+  }
+
+  const handleOnNewBill = (e: any) => {
+    e.preventDefault();
+    console.log("adding new bill");
+    console.log(newBillName);
+    console.log(newBillAmount);
+    axios.post("http://localhost:8000/api/budgeter/",
+      {
+        name: newBillName,
+        amount: newBillAmount
+      }).then(() => {
+        updateBudget();
+      });
+  }
+
+  const handleOnBillDelete = (id: string) => {
+    axios.delete("http://localhost:8000/api/budgeter/" + id)
+      .then(() => {
+        updateBudget();
+      })
   }
 
   return (
@@ -55,12 +89,16 @@ function App() {
 
       <h1>AvailableMoney: {availableMoney}</h1>
       <h1>Bills:</h1>
-      <input placeholder='new bill'></input>
+      <form onSubmit={(e) => { handleOnNewBill(e) }}>
+        <input placeholder="bill name" onChange={(e: any) => { setNewBillName(e.target.value) }}></input>
+        <input placeholder="billing ammount" onChange={(e: any) => { setNewBillAmount(e.target.value) }}></input>
+        <button type="submit">submit</button>
+      </form>
       {bills.map((bill: any) => {
         return (
-          <div>
-            {bill.name} : $<input type="number" value={bill.amount} onChange={() => { handleOnBillUpdate() }}></input>
-
+          <div key={bill._id}>
+            {bill.name} : $<input type="number" value={bill.amount} onChange={(e) => { handleOnBillUpdate(e, bill) }}></input>
+            <button onClick={() => { handleOnBillDelete(bill._id) }}>Delete</button>
           </div>
         )
       })}
