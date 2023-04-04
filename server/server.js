@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { taskRouter } = require('./routes/task.routes');
+const { billRouter } = require('./routes/bill.routes');
 
 const port = 8000;
 
@@ -13,7 +13,7 @@ app.use(cors());
 
 app.use(express.json());
 
-app.use('/api/todo-list', taskRouter);
+app.use('/api/budgeter', billRouter);
 
 app.listen(port, () => {
     console.log(`Listening on port ${port} for requests to respond to.`)
