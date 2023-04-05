@@ -4,106 +4,108 @@ import viteLogo from '/vite.svg';
 import axios from 'axios';
 import './App.css';
 
+
 function App() {
-  const [count, setCount] = useState(0)
   const [budget, setBudget] = useState(0);
-  const [availableMoney, setAvailableMoney] = useState(0);
-  const [bills, setBills] = useState([]);
+  const [availableMoney, setAvailableMoney] = useState(budget);
+  const [amountInBills, setAmountInBills] = useState(0);
+  const [allBills, setAllBills] = useState([]);
+
   const [newBillName, setNewBillName] = useState("");
-  const [newBillAmount, setNewBillAmount] = useState(0);
+  const [newBillAmount, setNewBillAmount] = useState("");
+
   const [updated, setUpdated] = useState(false);
 
-  // every budget update, bills gets subtracted from budget
-  // whole bills array gets recalculated - no memoization
+  useEffect(() => {
+    console.log("useeffect");
+    if (!updated) {
+      axios.get("http://localhost:8000/api/budgeter")
+        .then((res) => {
+          console.log(res.data);
+          setAllBills(res.data);
+          let totalBillingAmount = 0;
+          res.data.map((bill: any) => {
+            totalBillingAmount += bill.amount;
+          })
+          setAmountInBills(totalBillingAmount);
+          setAvailableMoney(budget - totalBillingAmount);
+        })
+        .catch((err) => {
+          console.log(err);
+        })
+    }
+    setUpdated(false);
+  }, [budget, updated])
 
-
-  const updateBudget = () => {
-    axios.get("http://localhost:8000/api/budgeter/")
-      .then(res => {
-        console.log(res.data);
-        setBills(res.data);
+  const handleOnSubmitNewBill = (e: any) => {
+    e.preventDefault();
+    console.log("submitted");
+    console.log(newBillName);
+    console.log(newBillAmount);
+    axios.post("http://localhost:8000/api/budgeter/", { name: newBillName, amount: newBillAmount })
+      .then(() => {
+        setUpdated(true);
       })
-      .catch(err => {
+  }
+
+  const handleOnDeleteBill = (id: string) => {
+    console.log("deleting");
+    axios.delete("http://localhost:8000/api/budgeter/" + id)
+      .then(() => {
+        console.log("removing...");
+      })
+      .then(() => {
+        console.log("remove success");
+        setUpdated(true);
+      })
+      .catch((err) => {
+        console.log(err);
+      })
+  }
+
+  const handleOnUpdateOneBill = (oneBill: any, updatedAmount: number) => {
+    console.log("updating bill");
+    console.log(updatedAmount)
+    axios.put("http://localhost:8000/api/budgeter/" + oneBill._id, { name: oneBill.name, amount: updatedAmount })
+      .then(() => {
+        console.log("updating...")
+      })
+      .then(() => {
+        console.log("update success");
+        setUpdated(true);
+      })
+      .catch((err) => {
         console.log(err)
       })
 
-    let newBudget = budget;
-    bills.map((oneBill: any) => {
-      newBudget -= oneBill.amount;
-    })
-    console.log("Updated budget: " + newBudget);
-    setAvailableMoney(newBudget);
-  }
-
-  useEffect(() => {
-    updateBudget();
-  }, [budget])
-
-  const handleOnBillUpdate = (e: any, bill: any) => {
-    axios.put(`http://localhost:8000/api/budgeter/${bill._id}`,
-      {
-        name: bill.name,
-        amount: e.target.value
-      })
-      .then(() => {
-        updateBudget();
-      })
-    // input will receive an id and update that id in API
-    console.log("updating one bill");
-  }
-
-  const handleOnNewBill = (e: any) => {
-    e.preventDefault();
-    console.log("adding new bill");
-    console.log(newBillName);
-    console.log(newBillAmount);
-    axios.post("http://localhost:8000/api/budgeter/",
-      {
-        name: newBillName,
-        amount: newBillAmount
-      }).then(() => {
-        updateBudget();
-      });
-  }
-
-  const handleOnBillDelete = (id: string) => {
-    axios.delete("http://localhost:8000/api/budgeter/" + id)
-      .then(() => {
-        updateBudget();
-      })
   }
 
   return (
-    <div className="App">
-      <h1>Budget: $<input
-        type="number"
-        placeholder="500"
-        onChange={(e: any) => { setBudget(e.target.value * 1); }}
-        style={{
-          border: "none",
-          background: "none",
-          fontSize: "32pt",
-          fontFamily: "inherit",
-          width: "240px"
-        }}></input></h1>
+    <div style={{ display: "flex" }}>
+      <div>
 
-      <h1>AvailableMoney: {availableMoney}</h1>
-      <h1>Bills:</h1>
-      <form onSubmit={(e) => { handleOnNewBill(e) }}>
-        <input placeholder="bill name" onChange={(e: any) => { setNewBillName(e.target.value) }}></input>
-        <input placeholder="billing ammount" onChange={(e: any) => { setNewBillAmount(e.target.value) }}></input>
-        <button type="submit">submit</button>
-      </form>
-      {bills.map((bill: any) => {
-        return (
-          <div key={bill._id}>
-            {bill.name} : $<input type="number" value={bill.amount} onChange={(e) => { handleOnBillUpdate(e, bill) }}></input>
-            <button onClick={() => { handleOnBillDelete(bill._id) }}>Delete</button>
-          </div>
-        )
-      })}
+        <h1>Budget: {budget}</h1>
+        <input type="number" onChange={(e: any) => { setBudget(e.target.value) }}></input>
+        <h1>Available Money: {availableMoney}</h1>
+        <h1>Amount In Bills: {amountInBills}</h1>
 
-
+        <form onSubmit={(e: any) => { handleOnSubmitNewBill(e) }}>
+          <input type="text" placeholder="name" onChange={(e: any) => { setNewBillName(e.target.value) }}></input>
+          <input type="number" placeholder="amount" onChange={(e: any) => { setNewBillAmount(e.target.value) }}></input>
+          <input type="submit"></input>
+        </form>
+      </div>
+      <div>
+        {allBills.map((oneBill: any) => {
+          return (
+            <div>
+              {oneBill.name}:
+              <input type="number" value={oneBill.amount} onChange={(e: any) => { handleOnUpdateOneBill(oneBill, e.target.value) }}></input>
+              <button onClick={() => { handleOnDeleteBill(oneBill._id) }}>Delete</button>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
