@@ -16,8 +16,10 @@ function App() {
 
   const [updated, setUpdated] = useState(false);
 
+  // workaround to have component update consistently in response to changes
+  // useeffect will run twice, but execute if statement once
+  // so multiple api calls don't occur
   useEffect(() => {
-    console.log("useeffect");
     if (!updated) {
       axios.get("http://localhost:8000/api/budgeter")
         .then((res) => {
@@ -37,6 +39,8 @@ function App() {
     setUpdated(false);
   }, [budget, updated])
 
+  // makes a post request
+  // updates
   const handleOnSubmitNewBill = (e: any) => {
     e.preventDefault();
     console.log("submitted");
@@ -48,6 +52,9 @@ function App() {
       })
   }
 
+  // to remove one bill from the array
+  // then make an api call to re-GET the array
+  // need some form of memoization to prevent needing to call whole array
   const handleOnDeleteBill = (id: string) => {
     console.log("deleting");
     axios.delete("http://localhost:8000/api/budgeter/" + id)
@@ -63,6 +70,7 @@ function App() {
       })
   }
 
+  // to update an existing bill's amount
   const handleOnUpdateOneBill = (oneBill: any, updatedAmount: number) => {
     console.log("updating bill");
     console.log(updatedAmount)
@@ -77,7 +85,6 @@ function App() {
       .catch((err) => {
         console.log(err)
       })
-
   }
 
   return (
@@ -95,6 +102,7 @@ function App() {
           <input type="submit"></input>
         </form>
       </div>
+      {/* would be good to modularize this into its own component */}
       <div>
         {allBills.map((oneBill: any) => {
           return (
